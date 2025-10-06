@@ -1,34 +1,69 @@
-import React, { useState } from 'react';
-import { Upload, Plus, Trash2 } from 'lucide-react';
-import { ShopFormData, ProductFormData } from '../types';
-import { categories } from '../data/mockData';
+import React, { useState } from "react";
+import { Upload, Plus, Trash2 } from "lucide-react";
+import { ShopFormData, ProductFormData } from "../types";
+import { createShop, createProduct } from "../services/api";
+import { categories } from "../data/mockData";
 
 const RegisterShopPage: React.FC = () => {
   const [shopData, setShopData] = useState<ShopFormData>({
-    name: '',
-    address: '',
-    phone: '',
-    category: '',
-    description: ''
+    name: "",
+    address: "",
+    phone: "",
+    category: "",
+    description: "",
   });
 
   const [products, setProducts] = useState<ProductFormData[]>([]);
   const [newProduct, setNewProduct] = useState<ProductFormData>({
-    name: '',
+    name: "",
     price: 0,
-    description: ''
+    description: "",
   });
 
-  const handleShopSubmit = (e: React.FormEvent) => {
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+
+  const handleShopSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Shop registration:', shopData);
-    // In a real app, this would submit to backend
+    setSubmitting(true);
+    setError(null);
+    setSuccess(null);
+    try {
+      const created = await createShop({
+        name: shopData.name,
+        address: shopData.address,
+        phone: shopData.phone,
+        category: shopData.category,
+        description: shopData.description,
+      } as any);
+      for (const p of products) {
+        await createProduct(created.id, {
+          name: p.name,
+          price: p.price,
+          description: p.description,
+        });
+      }
+      setSuccess("Shop registered successfully");
+      setShopData({
+        name: "",
+        address: "",
+        phone: "",
+        category: "",
+        description: "",
+      });
+      setProducts([]);
+    } catch (err: any) {
+      setError(err?.message || "Failed to register shop");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleAddProduct = () => {
     if (newProduct.name && newProduct.price) {
       setProducts([...products, { ...newProduct }]);
-      setNewProduct({ name: '', price: 0, description: '' });
+      setNewProduct({ name: "", price: 0, description: "" });
     }
   };
 
@@ -40,13 +75,27 @@ const RegisterShopPage: React.FC = () => {
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="bg-white rounded-lg shadow-md p-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-8">Register Your Shop</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-8">
+            Register Your Shop
+          </h1>
 
           {/* Shop Information */}
+          {error && (
+            <div className="mb-4 text-red-700 bg-red-100 border border-red-200 px-3 py-2 rounded">
+              {error}
+            </div>
+          )}
+          {success && (
+            <div className="mb-4 text-green-700 bg-green-100 border border-green-200 px-3 py-2 rounded">
+              {success}
+            </div>
+          )}
           <form onSubmit={handleShopSubmit} className="space-y-6">
             <div className="border-b border-gray-200 pb-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">Shop Information</h2>
-              
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">
+                Shop Information
+              </h2>
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -56,12 +105,14 @@ const RegisterShopPage: React.FC = () => {
                     type="text"
                     required
                     value={shopData.name}
-                    onChange={(e) => setShopData(prev => ({ ...prev, name: e.target.value }))}
+                    onChange={(e) =>
+                      setShopData((prev) => ({ ...prev, name: e.target.value }))
+                    }
                     className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="Enter your shop name"
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Category *
@@ -69,7 +120,12 @@ const RegisterShopPage: React.FC = () => {
                   <select
                     required
                     value={shopData.category}
-                    onChange={(e) => setShopData(prev => ({ ...prev, category: e.target.value }))}
+                    onChange={(e) =>
+                      setShopData((prev) => ({
+                        ...prev,
+                        category: e.target.value,
+                      }))
+                    }
                     className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   >
                     <option value="">Select a category</option>
@@ -91,12 +147,17 @@ const RegisterShopPage: React.FC = () => {
                     type="tel"
                     required
                     value={shopData.phone}
-                    onChange={(e) => setShopData(prev => ({ ...prev, phone: e.target.value }))}
+                    onChange={(e) =>
+                      setShopData((prev) => ({
+                        ...prev,
+                        phone: e.target.value,
+                      }))
+                    }
                     className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="+1 (555) 123-4567"
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Address *
@@ -105,7 +166,12 @@ const RegisterShopPage: React.FC = () => {
                     type="text"
                     required
                     value={shopData.address}
-                    onChange={(e) => setShopData(prev => ({ ...prev, address: e.target.value }))}
+                    onChange={(e) =>
+                      setShopData((prev) => ({
+                        ...prev,
+                        address: e.target.value,
+                      }))
+                    }
                     className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="123 Main St, City"
                   />
@@ -119,7 +185,12 @@ const RegisterShopPage: React.FC = () => {
                 <textarea
                   rows={3}
                   value={shopData.description}
-                  onChange={(e) => setShopData(prev => ({ ...prev, description: e.target.value }))}
+                  onChange={(e) =>
+                    setShopData((prev) => ({
+                      ...prev,
+                      description: e.target.value,
+                    }))
+                  }
                   className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="Describe your shop and what makes it special..."
                 />
@@ -135,11 +206,17 @@ const RegisterShopPage: React.FC = () => {
                     <div className="flex text-sm text-gray-600">
                       <label className="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500">
                         <span>Upload a file</span>
-                        <input type="file" className="sr-only" accept="image/*" />
+                        <input
+                          type="file"
+                          className="sr-only"
+                          accept="image/*"
+                        />
                       </label>
                       <p className="pl-1">or drag and drop</p>
                     </div>
-                    <p className="text-xs text-gray-500">PNG, JPG, GIF up to 10MB</p>
+                    <p className="text-xs text-gray-500">
+                      PNG, JPG, GIF up to 10MB
+                    </p>
                   </div>
                 </div>
               </div>
@@ -147,8 +224,10 @@ const RegisterShopPage: React.FC = () => {
 
             {/* Products Section */}
             <div className="border-b border-gray-200 pb-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">Add Products</h2>
-              
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">
+                Add Products
+              </h2>
+
               {/* Add Product Form */}
               <div className="bg-gray-50 rounded-lg p-4 mb-4">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -159,12 +238,17 @@ const RegisterShopPage: React.FC = () => {
                     <input
                       type="text"
                       value={newProduct.name}
-                      onChange={(e) => setNewProduct(prev => ({ ...prev, name: e.target.value }))}
+                      onChange={(e) =>
+                        setNewProduct((prev) => ({
+                          ...prev,
+                          name: e.target.value,
+                        }))
+                      }
                       className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       placeholder="Product name"
                     />
                   </div>
-                  
+
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Price ($)
@@ -173,13 +257,18 @@ const RegisterShopPage: React.FC = () => {
                       type="number"
                       step="0.01"
                       min="0"
-                      value={newProduct.price || ''}
-                      onChange={(e) => setNewProduct(prev => ({ ...prev, price: parseFloat(e.target.value) || 0 }))}
+                      value={newProduct.price || ""}
+                      onChange={(e) =>
+                        setNewProduct((prev) => ({
+                          ...prev,
+                          price: parseFloat(e.target.value) || 0,
+                        }))
+                      }
                       className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       placeholder="0.00"
                     />
                   </div>
-                  
+
                   <div className="flex items-end">
                     <button
                       type="button"
@@ -191,7 +280,7 @@ const RegisterShopPage: React.FC = () => {
                     </button>
                   </div>
                 </div>
-                
+
                 <div className="mt-4">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Description
@@ -199,7 +288,12 @@ const RegisterShopPage: React.FC = () => {
                   <input
                     type="text"
                     value={newProduct.description}
-                    onChange={(e) => setNewProduct(prev => ({ ...prev, description: e.target.value }))}
+                    onChange={(e) =>
+                      setNewProduct((prev) => ({
+                        ...prev,
+                        description: e.target.value,
+                      }))
+                    }
                     className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="Brief product description"
                   />
@@ -209,17 +303,26 @@ const RegisterShopPage: React.FC = () => {
               {/* Products List */}
               {products.length > 0 && (
                 <div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-3">Added Products</h3>
+                  <h3 className="text-lg font-medium text-gray-900 mb-3">
+                    Added Products
+                  </h3>
                   <div className="space-y-2">
                     {products.map((product, index) => (
-                      <div key={index} className="flex items-center justify-between bg-white border border-gray-200 rounded-lg p-3">
+                      <div
+                        key={index}
+                        className="flex items-center justify-between bg-white border border-gray-200 rounded-lg p-3"
+                      >
                         <div className="flex-1">
                           <div className="flex items-center space-x-4">
                             <span className="font-medium">{product.name}</span>
-                            <span className="text-green-600 font-semibold">${product.price.toFixed(2)}</span>
+                            <span className="text-green-600 font-semibold">
+                              ${product.price.toFixed(2)}
+                            </span>
                           </div>
                           {product.description && (
-                            <p className="text-sm text-gray-600 mt-1">{product.description}</p>
+                            <p className="text-sm text-gray-600 mt-1">
+                              {product.description}
+                            </p>
                           )}
                         </div>
                         <button
@@ -246,9 +349,14 @@ const RegisterShopPage: React.FC = () => {
               </button>
               <button
                 type="submit"
-                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-medium transition-colors duration-200"
+                disabled={submitting}
+                className={`px-6 py-2 rounded-md font-medium transition-colors duration-200 text-white ${
+                  submitting
+                    ? "bg-blue-300 cursor-not-allowed"
+                    : "bg-blue-600 hover:bg-blue-700"
+                }`}
               >
-                Register Shop
+                {submitting ? "Submitting..." : "Register Shop"}
               </button>
             </div>
           </form>

@@ -1,35 +1,75 @@
-import React, { useState } from 'react';
-import { useParams } from 'react-router-dom';
-import { Phone, MapPin, Star, CheckCircle, Clock } from 'lucide-react';
-import ProductCard from '../components/UI/ProductCard';
-import ReviewCard from '../components/UI/ReviewCard';
-import { mockShops, mockProducts, mockReviews } from '../data/mockData';
+import React, { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
+import { Phone, MapPin, Star, CheckCircle, Clock } from "lucide-react";
+import ProductCard from "../components/UI/ProductCard";
+import ReviewCard from "../components/UI/ReviewCard";
+import { getShop, getProducts, getReviews, addReview } from "../services/api";
+import LoadingSpinner from "../components/UI/LoadingSpinner";
+import ErrorBanner from "../components/UI/ErrorBanner";
 
 const ShopDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [newReview, setNewReview] = useState({
-    name: '',
+    name: "",
     rating: 5,
-    comment: ''
+    comment: "",
   });
 
-  const shop = mockShops.find(s => s.id === id);
-  const shopProducts = mockProducts.filter(p => p.shopId === id);
-  const shopReviews = mockReviews.filter(r => r.shopId === id);
+  const [shop, setShop] = useState<any>(null);
+  const [shopProducts, setShopProducts] = useState<any[]>([]);
+  const [shopReviews, setShopReviews] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!id) return;
+    (async () => {
+      try {
+        setLoading(true);
+        const [s, p, r] = await Promise.all([
+          getShop(id),
+          getProducts(id),
+          getReviews(id),
+        ]);
+        setShop(s);
+        setShopProducts(p);
+        setShopReviews(r);
+      } catch (e) {
+        console.error(e);
+        setError("Failed to load shop data");
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [id]);
 
   const handleReviewSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('New review:', newReview);
-    // In a real app, this would submit to backend
-    setNewReview({ name: '', rating: 5, comment: '' });
+    if (!id) return;
+    addReview(id, {
+      customerName: newReview.name,
+      rating: newReview.rating,
+      comment: newReview.comment,
+    })
+      .then((created) => {
+        setShopReviews((prev) => [created, ...prev]);
+        setNewReview({ name: "", rating: 5, comment: "" });
+      })
+      .catch(console.error);
   };
 
   if (!shop) {
-    return (
+    return loading ? (
+      <LoadingSpinner label="Loading shop..." />
+    ) : (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Shop Not Found</h2>
-          <p className="text-gray-600">The shop you're looking for doesn't exist.</p>
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">
+            Shop Not Found
+          </h2>
+          <p className="text-gray-600">
+            The shop you're looking for doesn't exist.
+          </p>
         </div>
       </div>
     );
@@ -70,14 +110,24 @@ const ShopDetailPage: React.FC = () => {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {error && (
+          <div className="mb-4">
+            <ErrorBanner
+              message={error}
+              onRetry={() => window.location.reload()}
+            />
+          </div>
+        )}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-8">
             {/* Shop Info */}
             <div className="bg-white rounded-lg shadow-md p-6">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">About This Shop</h2>
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                About This Shop
+              </h2>
               <p className="text-gray-600 mb-6">{shop.description}</p>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="flex items-center space-x-3">
                   <MapPin className="h-5 w-5 text-gray-400" />
@@ -96,7 +146,9 @@ const ShopDetailPage: React.FC = () => {
 
             {/* Products */}
             <div className="bg-white rounded-lg shadow-md p-6">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">Products</h2>
+              <h2 className="text-2xl font-bold text-gray-900 mb-6">
+                Products
+              </h2>
               {shopProducts.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {shopProducts.map((product) => (
@@ -104,14 +156,18 @@ const ShopDetailPage: React.FC = () => {
                   ))}
                 </div>
               ) : (
-                <p className="text-gray-500 text-center py-8">No products available at the moment.</p>
+                <p className="text-gray-500 text-center py-8">
+                  No products available at the moment.
+                </p>
               )}
             </div>
 
             {/* Reviews */}
             <div className="bg-white rounded-lg shadow-md p-6">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">Customer Reviews</h2>
-              
+              <h2 className="text-2xl font-bold text-gray-900 mb-6">
+                Customer Reviews
+              </h2>
+
               <div className="space-y-4 mb-8">
                 {shopReviews.map((review) => (
                   <ReviewCard key={review.id} review={review} />
@@ -120,8 +176,10 @@ const ShopDetailPage: React.FC = () => {
 
               {/* Add Review Form */}
               <form onSubmit={handleReviewSubmit} className="border-t pt-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Add Your Review</h3>
-                
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                  Add Your Review
+                </h3>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -131,7 +189,12 @@ const ShopDetailPage: React.FC = () => {
                       type="text"
                       required
                       value={newReview.name}
-                      onChange={(e) => setNewReview(prev => ({ ...prev, name: e.target.value }))}
+                      onChange={(e) =>
+                        setNewReview((prev) => ({
+                          ...prev,
+                          name: e.target.value,
+                        }))
+                      }
                       className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
                   </div>
@@ -141,7 +204,12 @@ const ShopDetailPage: React.FC = () => {
                     </label>
                     <select
                       value={newReview.rating}
-                      onChange={(e) => setNewReview(prev => ({ ...prev, rating: parseInt(e.target.value) }))}
+                      onChange={(e) =>
+                        setNewReview((prev) => ({
+                          ...prev,
+                          rating: parseInt(e.target.value),
+                        }))
+                      }
                       className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     >
                       <option value={5}>5 Stars</option>
@@ -152,7 +220,7 @@ const ShopDetailPage: React.FC = () => {
                     </select>
                   </div>
                 </div>
-                
+
                 <div className="mb-4">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Your Review
@@ -161,12 +229,17 @@ const ShopDetailPage: React.FC = () => {
                     required
                     rows={4}
                     value={newReview.comment}
-                    onChange={(e) => setNewReview(prev => ({ ...prev, comment: e.target.value }))}
+                    onChange={(e) =>
+                      setNewReview((prev) => ({
+                        ...prev,
+                        comment: e.target.value,
+                      }))
+                    }
                     className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="Share your experience..."
                   />
                 </div>
-                
+
                 <button
                   type="submit"
                   className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md font-medium transition-colors duration-200"
@@ -185,14 +258,18 @@ const ShopDetailPage: React.FC = () => {
                 <div className="text-center">
                   <MapPin className="h-12 w-12 text-blue-600 mx-auto mb-2" />
                   <p className="text-gray-600 font-medium">Interactive Map</p>
-                  <p className="text-sm text-gray-500">Location: {shop.address}</p>
+                  <p className="text-sm text-gray-500">
+                    Location: {shop.address}
+                  </p>
                 </div>
               </div>
             </div>
 
             {/* Quick Actions */}
             <div className="bg-white rounded-lg shadow-md p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                Quick Actions
+              </h3>
               <div className="space-y-3">
                 <button className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md font-medium transition-colors duration-200">
                   Call Shop

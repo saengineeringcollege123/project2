@@ -1,22 +1,55 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { ArrowRight, MapPin, Shield, Star } from 'lucide-react';
-import SearchBar from '../components/Forms/SearchBar';
-import ShopCard from '../components/UI/ShopCard';
-import OfferCard from '../components/UI/OfferCard';
-import { mockShops, mockOffers } from '../data/mockData';
+import React, { useEffect, useState } from "react";
+import LoadingSpinner from "../components/UI/LoadingSpinner";
+import ErrorBanner from "../components/UI/ErrorBanner";
+import { Link } from "react-router-dom";
+import { ArrowRight, MapPin, Shield, Star } from "lucide-react";
+import SearchBar from "../components/Forms/SearchBar";
+import ShopCard from "../components/UI/ShopCard";
+import OfferCard from "../components/UI/OfferCard";
+import { getShops, getOffers } from "../services/api";
 
 const HomePage: React.FC = () => {
+  const [shops, setShops] = useState([] as any);
+  const [offers, setOffers] = useState([] as any);
+
   const handleSearch = (query: string) => {
-    console.log('Searching for:', query);
+    console.log("Searching for:", query);
     // In a real app, this would filter shops/products
   };
 
-  const featuredShops = mockShops.slice(0, 3);
-  const hotOffers = mockOffers.slice(0, 3);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        setLoading(true);
+        const [s, o] = await Promise.all([getShops(), getOffers()]);
+        setShops(s);
+        setOffers(o);
+      } catch (e) {
+        console.error(e);
+        setError("Failed to load data");
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  const featuredShops = shops.slice(0, 3);
+  const hotOffers = offers.slice(0, 3);
 
   return (
     <div className="min-h-screen">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4">
+        {error && (
+          <ErrorBanner
+            message={error}
+            onRetry={() => window.location.reload()}
+          />
+        )}
+      </div>
+      {loading && <LoadingSpinner />}
       {/* Hero Section */}
       <section className="bg-gradient-to-br from-blue-600 via-blue-700 to-purple-800 text-white py-16 lg:py-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -26,13 +59,14 @@ const HomePage: React.FC = () => {
               <span className="block text-blue-200">& Real Market Prices</span>
             </h1>
             <p className="text-xl lg:text-2xl text-blue-100 mb-8 max-w-3xl mx-auto">
-              Connect with local businesses in your neighborhood and discover amazing products at competitive prices.
+              Connect with local businesses in your neighborhood and discover
+              amazing products at competitive prices.
             </p>
-            
+
             <div className="max-w-2xl mx-auto mb-8">
               <SearchBar onSearch={handleSearch} />
             </div>
-            
+
             <div className="flex flex-wrap justify-center gap-6 text-sm">
               <div className="flex items-center space-x-2">
                 <MapPin className="h-5 w-5" />
@@ -56,8 +90,12 @@ const HomePage: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h2 className="text-3xl font-bold text-gray-900">Featured Shops</h2>
-              <p className="text-gray-600 mt-2">Discover top-rated local businesses</p>
+              <h2 className="text-3xl font-bold text-gray-900">
+                Featured Shops
+              </h2>
+              <p className="text-gray-600 mt-2">
+                Discover top-rated local businesses
+              </p>
             </div>
             <Link
               to="/shops"
@@ -67,7 +105,7 @@ const HomePage: React.FC = () => {
               <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {featuredShops.map((shop) => (
               <ShopCard key={shop.id} shop={shop} />
@@ -81,8 +119,12 @@ const HomePage: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h2 className="text-3xl font-bold text-gray-900">Ongoing Hot Sales</h2>
-              <p className="text-gray-600 mt-2">Don't miss these amazing deals</p>
+              <h2 className="text-3xl font-bold text-gray-900">
+                Ongoing Hot Sales
+              </h2>
+              <p className="text-gray-600 mt-2">
+                Don't miss these amazing deals
+              </p>
             </div>
             <Link
               to="/offers"
@@ -92,7 +134,7 @@ const HomePage: React.FC = () => {
               <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {hotOffers.map((offer) => (
               <OfferCard key={offer.id} offer={offer} />

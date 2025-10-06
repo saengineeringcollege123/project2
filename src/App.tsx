@@ -1,12 +1,13 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Header from './components/Layout/Header';
-import Footer from './components/Layout/Footer';
-import HomePage from './pages/HomePage';
-import ShopsPage from './pages/ShopsPage';
-import ShopDetailPage from './pages/ShopDetailPage';
-import OffersPage from './pages/OffersPage';
-import RegisterShopPage from './pages/RegisterShopPage';
+import React from "react";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import Header from "./components/Layout/Header";
+import Footer from "./components/Layout/Footer";
+import HomePage from "./pages/HomePage";
+import ShopsPage from "./pages/ShopsPage";
+import ShopDetailPage from "./pages/ShopDetailPage";
+import OffersPage from "./pages/OffersPage";
+import RegisterShopPage from "./pages/RegisterShopPage";
+import LoginPage from "./pages/LoginPage";
 
 function App() {
   return (
@@ -20,6 +21,7 @@ function App() {
             <Route path="/shop/:id" element={<ShopDetailPage />} />
             <Route path="/offers" element={<OffersPage />} />
             <Route path="/register-shop" element={<RegisterShopPage />} />
+            <Route path="/login" element={<LoginPage />} />
           </Routes>
         </main>
         <Footer />

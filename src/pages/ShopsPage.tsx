@@ -1,22 +1,48 @@
-import React, { useState } from 'react';
-import { Filter } from 'lucide-react';
-import SearchBar from '../components/Forms/SearchBar';
-import ShopCard from '../components/UI/ShopCard';
-import { mockShops, categories } from '../data/mockData';
-import { Shop } from '../types';
+import React, { useState } from "react";
+import { Filter } from "lucide-react";
+import SearchBar from "../components/Forms/SearchBar";
+import ShopCard from "../components/UI/ShopCard";
+import { useEffect } from "react";
+import LoadingSpinner from "../components/UI/LoadingSpinner";
+import ErrorBanner from "../components/UI/ErrorBanner";
+import { categories } from "../data/mockData";
+import { getShops } from "../services/api";
+import { Shop } from "../types";
 
 const ShopsPage: React.FC = () => {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('All Categories');
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("All Categories");
   const [showVerifiedOnly, setShowVerifiedOnly] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
 
-  const filteredShops = mockShops.filter((shop: Shop) => {
-    const matchesSearch = shop.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         shop.address.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = selectedCategory === 'All Categories' || shop.category === selectedCategory;
+  const [shops, setShops] = useState<Shop[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        setLoading(true);
+        const s = await getShops();
+        setShops(s);
+      } catch (e) {
+        console.error(e);
+        setError("Failed to load shops");
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  const filteredShops = shops.filter((shop: Shop) => {
+    const matchesSearch =
+      shop.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      shop.address.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCategory =
+      selectedCategory === "All Categories" ||
+      shop.category === selectedCategory;
     const matchesVerified = !showVerifiedOnly || shop.verified;
-    
+
     return matchesSearch && matchesCategory && matchesVerified;
   });
 
@@ -32,7 +58,10 @@ const ShopsPage: React.FC = () => {
           <h1 className="text-3xl font-bold text-gray-900 mb-4">Local Shops</h1>
           <div className="flex flex-col lg:flex-row gap-4">
             <div className="flex-1">
-              <SearchBar onSearch={handleSearch} placeholder="Search shops by name or location..." />
+              <SearchBar
+                onSearch={handleSearch}
+                placeholder="Search shops by name or location..."
+              />
             </div>
             <button
               onClick={() => setShowFilters(!showFilters)}
@@ -46,10 +75,14 @@ const ShopsPage: React.FC = () => {
 
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Filters Sidebar */}
-          <div className={`lg:w-64 ${showFilters ? 'block' : 'hidden lg:block'}`}>
+          <div
+            className={`lg:w-64 ${showFilters ? "block" : "hidden lg:block"}`}
+          >
             <div className="bg-white rounded-lg shadow-md p-6 sticky top-24">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Filters</h3>
-              
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                Filters
+              </h3>
+
               {/* Category Filter */}
               <div className="mb-6">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -67,7 +100,7 @@ const ShopsPage: React.FC = () => {
                   ))}
                 </select>
               </div>
-              
+
               {/* Verified Filter */}
               <div className="mb-6">
                 <label className="flex items-center">
@@ -77,29 +110,49 @@ const ShopsPage: React.FC = () => {
                     onChange={(e) => setShowVerifiedOnly(e.target.checked)}
                     className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                   />
-                  <span className="ml-2 text-sm text-gray-700">Verified shops only</span>
+                  <span className="ml-2 text-sm text-gray-700">
+                    Verified shops only
+                  </span>
                 </label>
               </div>
-              
+
               {/* Results Count */}
               <div className="text-sm text-gray-600">
-                {filteredShops.length} shop{filteredShops.length !== 1 ? 's' : ''} found
+                {filteredShops.length} shop
+                {filteredShops.length !== 1 ? "s" : ""} found
               </div>
             </div>
           </div>
 
           {/* Shop Grid */}
           <div className="flex-1">
+            {error && (
+              <div className="mb-4">
+                <ErrorBanner
+                  message={error}
+                  onRetry={() => window.location.reload()}
+                />
+              </div>
+            )}
+            {loading && <LoadingSpinner label="Loading shops..." />}
             {filteredShops.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                 {filteredShops.map((shop) => (
-                  <ShopCard key={shop.id} shop={shop} />
+                  <ShopCard
+                    key={shop.id}
+                    shop={shop}
+                    onDeleted={(id) =>
+                      setShops((prev) => prev.filter((s) => s.id !== id))
+                    }
+                  />
                 ))}
               </div>
             ) : (
               <div className="text-center py-12">
                 <div className="text-gray-500 text-lg mb-4">No shops found</div>
-                <p className="text-gray-400">Try adjusting your search or filters</p>
+                <p className="text-gray-400">
+                  Try adjusting your search or filters
+                </p>
               </div>
             )}
           </div>
