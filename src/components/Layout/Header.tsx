@@ -1,16 +1,17 @@
-import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { ShoppingBag, Menu, X } from 'lucide-react';
+import React, { useState } from "react";
+import { Link, useLocation } from "react-router-dom";
+import { ShoppingBag, Menu, X, User } from "lucide-react";
+import { logout } from "../../services/auth";
 
 const Header: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
 
   const navigation = [
-    { name: 'Home', href: '/' },
-    { name: 'Shops', href: '/shops' },
-    { name: 'Offers', href: '/offers' },
-    { name: 'Register Shop', href: '/register-shop' }
+    { name: "Home", href: "/" },
+    { name: "Shops", href: "/shops" },
+    { name: "Offers", href: "/offers" },
+    { name: "Register Shop", href: "/register-shop" },
   ];
 
   const isActiveRoute = (href: string) => {
@@ -28,20 +29,44 @@ const Header: React.FC = () => {
           </Link>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex space-x-8">
+          <nav className="hidden md:flex space-x-8 items-center">
             {navigation.map((item) => (
               <Link
                 key={item.name}
                 to={item.href}
                 className={`px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 ${
                   isActiveRoute(item.href)
-                    ? 'text-blue-600 bg-blue-50'
-                    : 'text-gray-700 hover:text-blue-600 hover:bg-gray-50'
+                    ? "text-blue-600 bg-blue-50"
+                    : "text-gray-700 hover:text-blue-600 hover:bg-gray-50"
                 }`}
               >
                 {item.name}
               </Link>
             ))}
+            <div className="flex items-center space-x-3 ml-4">
+              <User className="h-5 w-5 text-gray-500" />
+              <span className="text-sm text-gray-700 font-medium">
+                {localStorage.getItem("auth_user") || "Guest"}
+              </span>
+              {localStorage.getItem("auth_token") ? (
+                <button
+                  onClick={() => {
+                    logout();
+                    window.location.href = "/login";
+                  }}
+                  className="text-sm text-red-600 hover:text-red-700"
+                >
+                  Logout
+                </button>
+              ) : (
+                <Link
+                  to="/login"
+                  className="text-sm text-blue-600 hover:text-blue-700"
+                >
+                  Login
+                </Link>
+              )}
+            </div>
           </nav>
 
           {/* Mobile menu button */}
@@ -70,13 +95,39 @@ const Header: React.FC = () => {
                   onClick={() => setIsMenuOpen(false)}
                   className={`block px-3 py-2 rounded-md text-base font-medium transition-colors duration-200 ${
                     isActiveRoute(item.href)
-                      ? 'text-blue-600 bg-blue-50'
-                      : 'text-gray-700 hover:text-blue-600 hover:bg-gray-50'
+                      ? "text-blue-600 bg-blue-50"
+                      : "text-gray-700 hover:text-blue-600 hover:bg-gray-50"
                   }`}
                 >
                   {item.name}
                 </Link>
               ))}
+              <div className="flex items-center space-x-3 px-3 py-2">
+                <User className="h-5 w-5 text-gray-500" />
+                <span className="text-sm text-gray-700 font-medium">
+                  {localStorage.getItem("auth_user") || "Guest"}
+                </span>
+                {localStorage.getItem("auth_token") ? (
+                  <button
+                    onClick={() => {
+                      setIsMenuOpen(false);
+                      logout();
+                      window.location.href = "/login";
+                    }}
+                    className="text-sm text-red-600 hover:text-red-700"
+                  >
+                    Logout
+                  </button>
+                ) : (
+                  <Link
+                    to="/login"
+                    onClick={() => setIsMenuOpen(false)}
+                    className="text-sm text-blue-600 hover:text-blue-700"
+                  >
+                    Login
+                  </Link>
+                )}
+              </div>
             </div>
           </div>
         )}

@@ -19,6 +19,7 @@ export async function login(
   setAuthToken(data.token);
   localStorage.setItem("auth_token", data.token);
   localStorage.setItem("auth_role", data.role);
+  localStorage.setItem("auth_user", username);
   return data;
 }
 
@@ -26,6 +27,7 @@ export function logout() {
   setAuthToken(null);
   localStorage.removeItem("auth_token");
   localStorage.removeItem("auth_role");
+  localStorage.removeItem("auth_user");
 }
 
 export function bootstrapAuth() {

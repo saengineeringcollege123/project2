@@ -8,7 +8,8 @@ class Shop(models.Model):
     category = models.CharField(max_length=100)
     rating = models.FloatField(default=0)
     verified = models.BooleanField(default=False)
-    image = models.URLField(blank=True)
+    # use TextField so we can store data URLs or normal URLs
+    image = models.TextField(blank=True)
     description = models.TextField(blank=True)
     lat = models.FloatField(default=0)
     lng = models.FloatField(default=0)

@@ -11,10 +11,10 @@ import { getShops, getOffers } from "../services/api";
 const HomePage: React.FC = () => {
   const [shops, setShops] = useState([] as any);
   const [offers, setOffers] = useState([] as any);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const handleSearch = (query: string) => {
-    console.log("Searching for:", query);
-    // In a real app, this would filter shops/products
+    setSearchQuery(query);
   };
 
   const [loading, setLoading] = useState(true);
@@ -36,8 +36,18 @@ const HomePage: React.FC = () => {
     })();
   }, []);
 
-  const featuredShops = shops.slice(0, 3);
-  const hotOffers = offers.slice(0, 3);
+  const q = searchQuery.toLowerCase();
+  const filteredShops = shops.filter(
+    (s: any) =>
+      s.name.toLowerCase().includes(q) || s.address.toLowerCase().includes(q)
+  );
+  const filteredOffers = offers.filter(
+    (o: any) =>
+      o.title.toLowerCase().includes(q) ||
+      o.description.toLowerCase().includes(q)
+  );
+  const featuredShops = filteredShops.slice(0, 3);
+  const hotOffers = filteredOffers.slice(0, 3);
 
   return (
     <div className="min-h-screen">

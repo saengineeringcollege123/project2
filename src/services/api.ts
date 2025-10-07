@@ -126,10 +126,10 @@ export async function getShop(id: string): Promise<Shop> {
 }
 
 export async function createShop(
-  payload: Omit<
-    Shop,
-    "id" | "rating" | "verified" | "image" | "coordinates"
-  > & { coordinates?: { lat?: number; lng?: number } }
+  payload: Omit<Shop, "id" | "rating" | "verified" | "coordinates"> & {
+    coordinates?: { lat?: number; lng?: number };
+    image?: string;
+  }
 ): Promise<Shop> {
   const body = JSON.stringify({
     name: payload.name,
@@ -137,7 +137,7 @@ export async function createShop(
     phone: payload.phone,
     category: payload.category,
     description: payload.description,
-    image: DEFAULT_IMAGE_URL,
+    image: payload.image || DEFAULT_IMAGE_URL,
   });
   const data = await http<ApiShop>("/shops/", { method: "POST", body });
   return mapShop(data);

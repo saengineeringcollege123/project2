@@ -19,6 +19,9 @@ const RegisterShopPage: React.FC = () => {
     price: 0,
     description: "",
   });
+  const [imageDataUrl, setImageDataUrl] = useState<string | undefined>(
+    undefined
+  );
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -36,6 +39,7 @@ const RegisterShopPage: React.FC = () => {
         phone: shopData.phone,
         category: shopData.category,
         description: shopData.description,
+        image: imageDataUrl,
       } as any);
       for (const p of products) {
         await createProduct(created.id, {
@@ -53,6 +57,7 @@ const RegisterShopPage: React.FC = () => {
         description: "",
       });
       setProducts([]);
+      setImageDataUrl(undefined);
     } catch (err: any) {
       setError(err?.message || "Failed to register shop");
     } finally {
@@ -210,6 +215,14 @@ const RegisterShopPage: React.FC = () => {
                           type="file"
                           className="sr-only"
                           accept="image/*"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+                            const reader = new FileReader();
+                            reader.onload = () =>
+                              setImageDataUrl(String(reader.result || ""));
+                            reader.readAsDataURL(file);
+                          }}
                         />
                       </label>
                       <p className="pl-1">or drag and drop</p>
@@ -217,6 +230,13 @@ const RegisterShopPage: React.FC = () => {
                     <p className="text-xs text-gray-500">
                       PNG, JPG, GIF up to 10MB
                     </p>
+                    {imageDataUrl && (
+                      <img
+                        src={imageDataUrl}
+                        alt="preview"
+                        className="mx-auto mt-2 h-20 w-20 object-cover rounded"
+                      />
+                    )}
                   </div>
                 </div>
               </div>

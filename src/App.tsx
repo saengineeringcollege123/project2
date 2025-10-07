@@ -1,5 +1,10 @@
 import React from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
 import Header from "./components/Layout/Header";
 import Footer from "./components/Layout/Footer";
 import HomePage from "./pages/HomePage";
@@ -16,12 +21,31 @@ function App() {
         <Header />
         <main className="flex-1">
           <Routes>
-            <Route path="/" element={<HomePage />} />
+            <Route
+              path="/"
+              element={
+                localStorage.getItem("auth_token") ? (
+                  <HomePage />
+                ) : (
+                  <Navigate to="/login" replace />
+                )
+              }
+            />
             <Route path="/shops" element={<ShopsPage />} />
             <Route path="/shop/:id" element={<ShopDetailPage />} />
             <Route path="/offers" element={<OffersPage />} />
-            <Route path="/register-shop" element={<RegisterShopPage />} />
+            <Route
+              path="/register-shop"
+              element={
+                localStorage.getItem("auth_role") === "admin" ? (
+                  <RegisterShopPage />
+                ) : (
+                  <Navigate to="/login" replace />
+                )
+              }
+            />
             <Route path="/login" element={<LoginPage />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </main>
         <Footer />

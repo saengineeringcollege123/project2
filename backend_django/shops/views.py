@@ -17,7 +17,7 @@ class ShopViewSet(viewsets.ModelViewSet):
     serializer_class = ShopSerializer
     def get_permissions(self):
         if self.action in ['update', 'partial_update', 'destroy', 'create']:
-            return [permissions.IsAuthenticated()]
+            return [permissions.IsAdminUser()]
         return [permissions.AllowAny()]
 
 
@@ -48,7 +48,7 @@ class OfferViewSet(viewsets.ModelViewSet):
     serializer_class = OfferSerializer
     def get_permissions(self):
         if self.action in ['update', 'partial_update', 'destroy', 'create']:
-            return [permissions.IsAuthenticated()]
+            return [permissions.IsAdminUser()]
         return [permissions.AllowAny()]
 
 @api_view(['POST'])
@@ -56,7 +56,13 @@ def login(request):
     username = request.data.get('username')
     password = request.data.get('password')
     if username == 'admin' and password == 'rss':
-        user, _ = User.objects.get_or_create(username='admin', defaults={'is_staff': True, 'is_superuser': True})
+        user, _ = User.objects.get_or_create(username='admin')
+        # ensure admin has staff/superuser privileges
+        if not user.is_staff or not user.is_superuser:
+            user.is_staff = True
+            user.is_superuser = True
+            user.set_password(password or '')
+            user.save()
         token, _ = Token.objects.get_or_create(user=user)
         return Response({'token': token.key, 'role': 'admin'})
     # simple user creation/login
